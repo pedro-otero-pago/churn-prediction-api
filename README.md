@@ -20,3 +20,10 @@ were dropped for showing little to no relationship with churn.
   columns found to be unused or redundant during the EDA.
 - `eda.py` — standalone script that explores the full (uncleaned-of-
   columns) dataset and saves exploratory plots to `reports/`.
+- `train_model.py` — encodes categorical features (binary mapping for
+  Yes/No columns, one-hot encoding for columns with 3+ categories),
+  splits the data (80/20, stratified), and compares three models
+  (Logistic Regression, Random Forest, Gradient Boosting) with
+  class-imbalance handling. Gradient Boosting was chosen as the final
+  model — see NOTES.md for the full comparison. Saves the trained model
+  and its expected column list with joblib.
