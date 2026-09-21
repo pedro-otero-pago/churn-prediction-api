@@ -255,3 +255,26 @@ response rather than the exact prediction, so the test doesn't break if
 the model is retrained later), and two rejection cases relying on
 Pydantic's automatic validation — a wrong field type and a missing
 required field — both expected to return 422, not 400 or 500.
+
+## Dockerfile
+
+requirements.txt is copied and installed before the rest of the code,
+so Docker only reinstalls dependencies when requirements.txt itself
+changes, not on every code edit — this takes advantage of Docker's
+layer caching to make rebuilds faster.
+
+model.pkl and model_columns.pkl are copied to the container's working
+directory root, matching the relative path api.py expects
+(BASE_DIR/../model.pkl). The data/ folder (the raw CSV) is not copied
+at all — the API only needs the already-trained model to serve
+predictions, not the original dataset.
+
+The container runs uvicorn with --host 0.0.0.0 instead of the default
+used locally, since 0.0.0.0 means "listen on all network interfaces" —
+without it, the API would only respond to requests from inside the
+container itself, unreachable from the host machine.
+
+Tested locally with `docker build -t churn-prediction-api .` followed
+by `docker run -p 8000:8000 churn-prediction-api`, confirming both
+/health and /predict work identically inside the container as they did
+running locally with uvicorn directly.

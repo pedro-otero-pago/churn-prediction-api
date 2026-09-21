@@ -39,3 +39,11 @@ uvicorn src.api:app --reload
 ```
 Interactive docs (and a way to try /predict without writing a client)
 are available at `http://127.0.0.1:8000/docs`.
+
+## Running with Docker
+```
+docker build -t churn-prediction-api .
+docker run -p 8000:8000 churn-prediction-api
+```
+The API will be available at `http://127.0.0.1:8000`, with interactive
+docs at `http://127.0.0.1:8000/docs`.
