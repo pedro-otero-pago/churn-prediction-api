@@ -27,3 +27,15 @@ were dropped for showing little to no relationship with churn.
   class-imbalance handling. Gradient Boosting was chosen as the final
   model — see NOTES.md for the full comparison. Saves the trained model
   and its expected column list with joblib.
+- `api.py` — FastAPI service exposing `/predict` (encodes incoming
+  customer data the same way as train_model.py, aligns columns to what
+  the model expects, and returns a churn prediction with probability)
+  and `/health` for infrastructure checks.
+
+
+## Running the API
+```
+uvicorn src.api:app --reload
+```
+Interactive docs (and a way to try /predict without writing a client)
+are available at `http://127.0.0.1:8000/docs`.

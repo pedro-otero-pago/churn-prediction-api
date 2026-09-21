@@ -212,3 +212,46 @@ used to train it raises an InconsistentVersionWarning. To avoid this
 when the model runs inside the future Docker container, requirements.txt
 needs to pin the exact scikit-learn version used during training, not
 just any version.
+
+## API (api.py)
+
+Built with FastAPI. The model and column list are loaded once at
+startup (not per request) using a path built relative to api.py's own
+location (os.path.dirname(os.path.abspath(__file__))), rather than a
+bare "model.pkl" string — a relative path like that resolves against
+wherever the process is launched from, which broke when running tests
+from src/tests/ instead of the project root. This matters again later
+for Docker, where the working directory inside the container may not
+match the local one either.
+
+CustomerData (a Pydantic model) defines the 15 raw fields a client must
+send — the same fields used before encoding in train_model.py, not the
+34 final model columns. FastAPI validates incoming requests against
+this automatically, rejecting anything with a wrong type or a missing
+field before the prediction code runs at all.
+
+The /predict endpoint applies the exact same encoding as
+train_model.py (binary mapping, then one-hot encoding), then aligns the
+result to model_columns with DataFrame.reindex(fill_value=0), so a
+category that doesn't appear for a given customer (e.g. a payment
+method they don't have) doesn't break the input shape the model
+expects. Returns both a boolean prediction and the churn probability,
+since the probability is more actionable for the business than a bare
+yes/no — it lets them prioritize which at-risk customers to contact
+first.
+
+/health is a minimal endpoint with no logic, meant for infrastructure
+(e.g. Docker) to check the API is alive without sending real customer
+data.
+
+## Testing the API
+
+test_api.py uses FastAPI's TestClient, which calls the app directly in
+memory instead of needing a running uvicorn server — same approach as
+requests-based testing, but without the network layer. Covers: /health
+returning the expected response, /predict returning a well-formed
+response for valid data (checking the shape and value range of the
+response rather than the exact prediction, so the test doesn't break if
+the model is retrained later), and two rejection cases relying on
+Pydantic's automatic validation — a wrong field type and a missing
+required field — both expected to return 422, not 400 or 500.
